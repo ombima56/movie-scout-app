@@ -1,11 +1,15 @@
-body {
+/* Reset default margin and padding */
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+}
+
+/* Base styles */
+body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #0d0d0d;
-  color: #f1f1f1;
-  display: flex;
-  justify-content: center;
+  line-height: 1.5;
+  color: #333;
 }
 
 .landing-container {
