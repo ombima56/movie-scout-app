@@ -13,6 +13,12 @@ function Search() {
   const debouncedSearch = useDebounce(searchQuery, 300);
   const searchInputRef = useRef(null);
 
+  // Dynamic recentSuggestions from localStorage
+  const [recentSuggestions, setRecentSuggestions] = useState(() => {
+    const saved = localStorage.getItem('recentSearches');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   // Fetch trending movies and TV shows
   const { data: trendingMovies } = useQuery({
     queryKey: ['trendingMovies'],
@@ -25,6 +31,12 @@ function Search() {
     queryFn: () => api.getTrending('tv', 'week'),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Generate dynamic popularSuggestions from trending data
+  const popularSuggestions = Array.from(new Set([
+    ...(trendingMovies || []).map(item => item.title || item.name),
+    ...(trendingTV || []).map(item => item.title || item.name)
+  ])).slice(0, 10);
 
   const fetchSearchResults = async () => {
     if (!debouncedSearch.trim()) return [];
@@ -70,15 +82,6 @@ function Search() {
     setShowResults(true);
   };
 
-  const popularSuggestions = [
-    'Marvel', 'DC Comics', 'Star Wars', 'Harry Potter', 'Lord of the Rings',
-    'Disney', 'Pixar', 'Studio Ghibli', 'Christopher Nolan', 'Quentin Tarantino'
-  ];
-
-  const recentSuggestions = [
-    'Oppenheimer', 'Barbie', 'Spider-Man', 'The Batman', 'Top Gun Maverick',
-    'Dune', 'No Time to Die', 'Black Panther', 'Avengers', 'Stranger Things'
-  ];
 
   // Focus search input on component mount
   useEffect(() => {
@@ -252,7 +255,6 @@ function Search() {
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Trending Now</h3>
                     <div className="flex flex-wrap justify-center gap-3">
                       {recentSuggestions.map((suggestion) => (
                         <button
