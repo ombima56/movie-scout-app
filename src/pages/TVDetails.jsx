@@ -4,39 +4,40 @@ import axios from "axios";
 import { useWatchlist } from "../contexts/WatchlistContext";
 import {
   StarIcon,
+  TvIcon,
   PlayIcon,
   ClockIcon,
   CalendarIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
 
-function MovieDetails() {
+function TVDetails() {
   const { id } = useParams();
   const { addToWatchlist, removeFromWatchlist, watchlist } = useWatchlist();
   const isInWatchlist = watchlist.some((item) => item.id === Number(id));
   const [showPlayer, setShowPlayer] = useState(false);
 
-  const fetchMovieDetails = async () => {
-    const [movie, credits, videos, similar, reviews] = await Promise.all([
+  const fetchTVDetails = async () => {
+    const [tv, credits, videos, similar, reviews] = await Promise.all([
       axios.get(
-        `https://api.themoviedb.org/3/movie/${id}?api_key=${import.meta.env.VITE_TMDB_API_KEY}&language=en-US`
+        `https://api.themoviedb.org/3/tv/${id}?api_key=${import.meta.env.VITE_TMDB_API_KEY}&language=en-US`
       ),
       axios.get(
-        `https://api.themoviedb.org/3/movie/${id}/credits?api_key=${import.meta.env.VITE_TMDB_API_KEY}`
+        `https://api.themoviedb.org/3/tv/${id}/credits?api_key=${import.meta.env.VITE_TMDB_API_KEY}`
       ),
       axios.get(
-        `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${import.meta.env.VITE_TMDB_API_KEY}&language=en-US`
+        `https://api.themoviedb.org/3/tv/${id}/videos?api_key=${import.meta.env.VITE_TMDB_API_KEY}&language=en-US`
       ),
       axios.get(
-        `https://api.themoviedb.org/3/movie/${id}/similar?api_key=${import.meta.env.VITE_TMDB_API_KEY}&language=en-US&page=1`
+        `https://api.themoviedb.org/3/tv/${id}/similar?api_key=${import.meta.env.VITE_TMDB_API_KEY}&language=en-US&page=1`
       ),
       axios.get(
-        `https://api.themoviedb.org/3/movie/${id}/reviews?api_key=${import.meta.env.VITE_TMDB_API_KEY}&language=en-US&page=1`
+        `https://api.themoviedb.org/3/tv/${id}/reviews?api_key=${import.meta.env.VITE_TMDB_API_KEY}&language=en-US&page=1`
       ),
     ]);
 
     return {
-      ...movie.data,
+      ...tv.data,
       credits: credits.data,
       videos: videos.data,
       similar: similar.data,
@@ -44,22 +45,23 @@ function MovieDetails() {
     };
   };
 
-  const { data: movie, isLoading } = useQuery({
-    queryKey: ["movie", id],
-    queryFn: fetchMovieDetails,
+  const { data: tvShow, isLoading } = useQuery({
+    queryKey: ["tv", id],
+    queryFn: fetchTVDetails,
   });
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">Loading...</div>
-    );
-  }
 
   const handleWatchlistToggle = () => {
     if (isInWatchlist) {
       removeFromWatchlist(Number(id));
     } else {
-      addToWatchlist(movie);
+      addToWatchlist({
+        id: Number(id),
+        title: tvShow.name,
+        poster_path: tvShow.poster_path,
+        release_date: tvShow.first_air_date,
+        vote_average: tvShow.vote_average,
+        media_type: "tv",
+      });
     }
   };
 
@@ -68,30 +70,48 @@ function MovieDetails() {
   };
 
   const formatRuntime = (minutes) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+    if (!minutes || minutes.length === 0) return "N/A";
+    const runtime = minutes[0];
+    const hours = Math.floor(runtime / 60);
+    const mins = runtime % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white"></div>
+      </div>
+    );
+  }
+
+  if (!tvShow) {
+    return (
+      <div className="text-center text-gray-600 dark:text-gray-400">
+        TV show not found
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pt-20">
+    <div className="max-w-7xl mx-auto space-y-8">
       {/* Hero Section with Player */}
       <div className="relative">
         {showPlayer ? (
           <div className="aspect-video bg-black rounded-lg overflow-hidden">
             <iframe
-              src={`https://vidsrc.me/embed/movie?tmdb=${movie.id}`}
+              src={`https://vidsrc.me/embed/tv?tmdb=${tvShow.id}`}
               className="w-full h-full"
               allowFullScreen
-              title={`Watch ${movie.title}`}
+              title={`Watch ${tvShow.name}`}
             />
           </div>
         ) : (
           <div
             className="relative aspect-video bg-gradient-to-r from-black/70 to-transparent rounded-lg overflow-hidden cursor-pointer group"
             style={{
-              backgroundImage: movie.backdrop_path
-                ? `url(https://image.tmdb.org/t/p/w1280${movie.backdrop_path})`
+              backgroundImage: tvShow.backdrop_path
+                ? `url(https://image.tmdb.org/t/p/w1280${tvShow.backdrop_path})`
                 : "none",
               backgroundSize: "cover",
               backgroundPosition: "center",
@@ -102,7 +122,7 @@ function MovieDetails() {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center text-white">
                 <PlayIcon className="h-20 w-20 mx-auto mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
-                <h2 className="text-2xl font-bold mb-2">Watch {movie.title}</h2>
+                <h2 className="text-2xl font-bold mb-2">Watch {tvShow.name}</h2>
                 <p className="text-lg opacity-90">Click to start streaming</p>
               </div>
             </div>
@@ -110,37 +130,46 @@ function MovieDetails() {
         )}
       </div>
 
-      {/* Movie Info Section */}
+      {/* TV Show Info Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-1/4">
             <img
-              src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-              alt={movie.title}
+              src={`https://image.tmdb.org/t/p/w500${tvShow.poster_path}`}
+              alt={tvShow.name}
               className="w-full rounded-lg shadow-md"
             />
           </div>
 
           <div className="lg:w-3/4 space-y-6">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                {movie.title}
-              </h1>
+              <div className="flex items-center mb-4">
+                <TvIcon className="h-8 w-8 text-blue-600 mr-3" />
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+                  {tvShow.name}
+                </h1>
+              </div>
               <div className="flex items-center space-x-6 text-gray-600 dark:text-gray-300 mb-4">
                 <div className="flex items-center">
                   <StarIcon className="h-5 w-5 text-yellow-400 mr-1" />
                   <span className="font-semibold">
-                    {movie.vote_average?.toFixed(1)}
+                    {tvShow.vote_average?.toFixed(1)}
                   </span>
                   <span className="text-sm ml-1">/ 10</span>
                 </div>
                 <div className="flex items-center">
                   <CalendarIcon className="h-5 w-5 mr-1" />
-                  <span>{new Date(movie.release_date).getFullYear()}</span>
+                  <span>{new Date(tvShow.first_air_date).getFullYear()}</span>
+                  {tvShow.status === "Ended" && tvShow.last_air_date && (
+                    <span>
+                      {" "}
+                      - {new Date(tvShow.last_air_date).getFullYear()}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center">
                   <ClockIcon className="h-5 w-5 mr-1" />
-                  <span>{formatRuntime(movie.runtime)}</span>
+                  <span>{formatRuntime(tvShow.episode_run_time)}</span>
                 </div>
               </div>
             </div>
@@ -150,8 +179,44 @@ function MovieDetails() {
                 Overview
               </h3>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                {movie.overview}
+                {tvShow.overview}
               </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                  Status
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {tvShow.status}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                  Seasons
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {tvShow.number_of_seasons}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                  Episodes
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {tvShow.number_of_episodes}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                  Network
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {tvShow.networks?.map((network) => network.name).join(", ") ||
+                    "N/A"}
+                </p>
+              </div>
             </div>
 
             <div>
@@ -159,7 +224,7 @@ function MovieDetails() {
                 Genres
               </h3>
               <div className="flex flex-wrap gap-2">
-                {movie.genres?.map((genre) => (
+                {tvShow.genres?.map((genre) => (
                   <span
                     key={genre.id}
                     className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium"
@@ -197,7 +262,7 @@ function MovieDetails() {
           Cast & Crew
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {movie.credits?.cast?.slice(0, 12).map((cast) => (
+          {tvShow.credits?.cast?.slice(0, 12).map((cast) => (
             <div key={cast.id} className="text-center">
               <img
                 src={
@@ -219,29 +284,29 @@ function MovieDetails() {
         </div>
       </div>
 
-      {/* Similar Movies Section */}
-      {movie.similar?.results?.length > 0 && (
+      {/* Similar TV Shows Section */}
+      {tvShow.similar?.results?.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Similar Movies
+            Similar TV Shows
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-            {movie.similar.results.slice(0, 12).map((similarMovie) => (
-              <div key={similarMovie.id} className="group cursor-pointer">
+            {tvShow.similar.results.slice(0, 12).map((similarShow) => (
+              <div key={similarShow.id} className="group cursor-pointer">
                 <img
                   src={
-                    similarMovie.poster_path
-                      ? `https://image.tmdb.org/t/p/w300${similarMovie.poster_path}`
+                    similarShow.poster_path
+                      ? `https://image.tmdb.org/t/p/w300${similarShow.poster_path}`
                       : "/placeholder-movie.jpg"
                   }
-                  alt={similarMovie.title}
+                  alt={similarShow.name}
                   className="w-full aspect-[2/3] object-cover rounded-lg mb-3 group-hover:scale-105 transition-transform"
                 />
                 <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">
-                  {similarMovie.title}
+                  {similarShow.name}
                 </h3>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {new Date(similarMovie.release_date).getFullYear()}
+                  {new Date(similarShow.first_air_date).getFullYear()}
                 </p>
               </div>
             ))}
@@ -250,13 +315,13 @@ function MovieDetails() {
       )}
 
       {/* Reviews Section */}
-      {movie.reviews?.results?.length > 0 && (
+      {tvShow.reviews?.results?.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
             Reviews
           </h2>
           <div className="space-y-6">
-            {movie.reviews.results.slice(0, 3).map((review) => (
+            {tvShow.reviews.results.slice(0, 3).map((review) => (
               <div
                 key={review.id}
                 className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-b-0"
@@ -288,4 +353,4 @@ function MovieDetails() {
   );
 }
 
-export default MovieDetails;
+export default TVDetails;
