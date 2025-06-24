@@ -1,22 +1,44 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../components/ThemeProvider';
 import MovieCard from '../components/MovieCard';
+import { api } from '../utils/api';
 
 function Trending() {
   useTheme();
 
   const fetchTrendingMovies = async () => {
-    const response = await api.getTrending();
+    const response = await api.getTrending('movie', 'week');
     return response;
   };
 
-  const { data: trendingMovies, isLoading } = useQuery({
+  const { data: trendingMovies, isLoading, error } = useQuery({
     queryKey: ['trendingMovies'],
     queryFn: fetchTrendingMovies
   });
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-64">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error('Error fetching trending movies:', error);
+    return (
+      <div className="flex justify-center items-center h-64 text-red-500">
+        Error loading trending movies. Please check your API key.
+      </div>
+    );
+  }
+
+  if (!trendingMovies || !Array.isArray(trendingMovies)) {
+    return (
+      <div className="flex justify-center items-center h-64 text-gray-500">
+        No trending movies found
+      </div>
+    );
   }
 
   return (
