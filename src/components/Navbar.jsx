@@ -56,7 +56,7 @@ function Navbar() {
                 to={to}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                   location.pathname === to
-                    ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25"
+                    ? "bg-primary-500 text-gray-700  dark:text-white shadow-lg shadow-primary-500/25"
                     : "text-gray-700 hover:text-primary-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-primary-400 dark:hover:bg-gray-800"
                 }`}
               >
