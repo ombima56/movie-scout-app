@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useWatchlist } from '../contexts/WatchlistContext';
-import { StarIcon, ClockIcon, PlayIcon } from '@heroicons/react/24/outline';
+import { StarIcon, PlayIcon } from '@heroicons/react/24/outline';
 
 function MovieDetails() {
   const { id } = useParams();
