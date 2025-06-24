@@ -8,11 +8,8 @@ Movie Scout is a modern web application that helps you discover movies and TV sh
 -  View trending content
 -  Create and manage your personal watchlist
 -  Detailed movie information including ratings, cast, and plot
--  Dark/Light theme support
 -  Responsive design for all devices
--  Fast loading with caching and pagination
 -  Genre-based filtering
--  Multiple ratings sources (IMDb, Rotten Tomatoes, TMDB)
 
 ## Tech Stack
 
@@ -35,8 +32,8 @@ Movie Scout is a modern web application that helps you discover movies and TV sh
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/movie-scout.git
-cd movie-scout
+git clone https://github.com/ombima56/movie-scout-app.git
+cd movie-scout-app
 ```
 
 2. Install dependencies:
@@ -108,21 +105,11 @@ npm run dev
 yarn dev
 ```
 
-### Building for Production
+### Navigate to: 
 
-```bash
-npm run build
-# or
-yarn build
-```
+[http://localhost:5173](http://localhost:5173)
 
-### Running Tests
-
-```bash
-npm run test
-# or
-yarn test
-```
+![alt text](image.png)
 
 ## Contributing
 
