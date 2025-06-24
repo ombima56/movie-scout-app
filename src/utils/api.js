@@ -11,8 +11,8 @@ const OMDB_API_KEY = import.meta.env.VITE_OMDB_API_KEY;
 const tmdbEndpoints = {
   search: (query, page = 1) =>
     `${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=${page}`,
-  trending: (mediaType = "all", timeWindow = "day") =>
-    `${TMDB_BASE_URL}/trending/${mediaType}/${timeWindow}?api_key=${TMDB_API_KEY}`,
+  trending: (mediaType = "all", timeWindow = "day", page = 1) =>
+    `${TMDB_BASE_URL}/trending/${mediaType}/${timeWindow}?api_key=${TMDB_API_KEY}&page=${page}`,
   movieDetails: (id) => `${TMDB_BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}`,
   tvDetails: (id) => `${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}`,
   movieVideos: (id) =>
@@ -57,13 +57,23 @@ export const api = {
   // TMDB API Functions
   search: async (query, page = 1) => {
     const response = await fetchWithTimeout(tmdbEndpoints.search(query, page));
-    return response.results || [];
+    return {
+      results: response.results || [],
+      page: response.page || page,
+      totalPages: response.total_pages || 1,
+      totalResults: response.total_results || 0,
+    };
   },
-  getTrending: async (mediaType = "movie", timeWindow = "week") => {
+  getTrending: async (mediaType = "movie", timeWindow = "week", page = 1) => {
     const response = await fetchWithTimeout(
-      tmdbEndpoints.trending(mediaType, timeWindow)
+      tmdbEndpoints.trending(mediaType, timeWindow, page)
     );
-    return response.results || [];
+    return {
+      results: response.results || [],
+      page: response.page || page,
+      totalPages: response.total_pages || 1,
+      totalResults: response.total_results || 0,
+    };
   },
   getMovieDetails: async (id) =>
     fetchWithTimeout(tmdbEndpoints.movieDetails(id)),
@@ -81,4 +91,18 @@ export const api = {
     fetchWithTimeout(omdbEndpoints.searchByTitle(title, year, plot)),
   searchById: async (imdbId) =>
     fetchWithTimeout(omdbEndpoints.searchById(imdbId)),
+
+  // Backward compatibility functions (return only results array)
+  searchResults: async (query, page = 1) => {
+    const response = await api.search(query, page);
+    return response.results;
+  },
+  getTrendingResults: async (
+    mediaType = "movie",
+    timeWindow = "week",
+    page = 1
+  ) => {
+    const response = await api.getTrending(mediaType, timeWindow, page);
+    return response.results;
+  },
 };
