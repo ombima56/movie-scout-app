@@ -12,7 +12,7 @@ function Watchlist() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pt-10">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Watchlist</h1>
       
       <div className="space-y-4">
