@@ -1,15 +1,16 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from './components/ThemeProvider';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'react-hot-toast';
-import { WatchlistProvider } from './contexts/WatchlistContext';
-import Footer from './components/Footer';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "./components/ThemeProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "react-hot-toast";
+import { WatchlistProvider } from "./contexts/WatchlistContext";
+import Footer from "./components/Footer";
 
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import MovieDetails from './pages/MovieDetails';
-import Watchlist from './pages/Watchlist';
-import Trending from './pages/Trending';
+import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import MovieDetails from "./pages/MovieDetails";
+import TVDetails from "./pages/TVDetails";
+import Watchlist from "./pages/Watchlist";
+import Trending from "./pages/Trending";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/movie/:id" element={<MovieDetails />} />
+                  <Route path="/tv/:id" element={<TVDetails />} />
                   <Route path="/watchlist" element={<Watchlist />} />
                   <Route path="/trending" element={<Trending />} />
                 </Routes>
@@ -34,8 +36,8 @@ function App() {
                 position="bottom-right"
                 toastOptions={{
                   style: {
-                    background: '#333',
-                    color: '#fff',
+                    background: "#333",
+                    color: "#fff",
                   },
                 }}
               />
