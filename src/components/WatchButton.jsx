@@ -60,7 +60,6 @@ function WatchButton({
           },
         ];
 
-        // Open the first streaming service (Netflix) as default
         window.open(streamingOptions[0].url, "_blank");
       }
     } catch (error) {
