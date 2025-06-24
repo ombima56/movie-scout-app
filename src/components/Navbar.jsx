@@ -38,7 +38,7 @@ function Navbar() {
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center space-x-2 text-xl font-bold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            className="flex items-center space-x-2 text-xl font-bold text-gray-900 text-primary-500 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             onClick={closeMobileMenu}
           >
             <FilmIcon className="h-8 w-8 text-primary-500" />
