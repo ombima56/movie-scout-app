@@ -36,16 +36,6 @@ function Navbar() {
               <span className="text-primary-500">•</span> Trending
             </Link>
             <Link
-              to="/search"
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                location.pathname === '/search'
-                  ? 'bg-primary-500 text-white'
-                  : 'text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
-              }`}
-            >
-              <span className="text-primary-500">•</span> Search
-            </Link>
-            <Link
               to="/watchlist"
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/watchlist'

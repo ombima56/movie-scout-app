@@ -7,7 +7,6 @@ import Footer from './components/Footer';
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
-import Search from './pages/Search';
 import MovieDetails from './pages/MovieDetails';
 import Watchlist from './pages/Watchlist';
 import Trending from './pages/Trending';
@@ -20,12 +19,11 @@ function App() {
       <ThemeProvider>
         <WatchlistProvider>
           <Router>
-            <div className="min-h-screen flex flex-col">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
               <Navbar />
               <main className="flex-grow container mx-auto px-4 py-8">
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/search" element={<Search />} />
                   <Route path="/movie/:id" element={<MovieDetails />} />
                   <Route path="/watchlist" element={<Watchlist />} />
                   <Route path="/trending" element={<Trending />} />
