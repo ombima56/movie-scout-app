@@ -2,6 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "../hooks/useDebounce";
 import { api } from "../utils/api";
+import { showErrorNotification } from "../utils/errorNotifications";
+import { useNetworkStatus } from "../hooks/useNetworkStatus";
+import { SearchOfflineMessage } from "../components/OfflineMessage";
 import MovieCard from "../components/MovieCard";
 import Pagination from "../components/Pagination";
 import {
@@ -20,6 +23,7 @@ function Search() {
   const [searchPage, setSearchPage] = useState(1);
   const debouncedSearch = useDebounce(searchQuery, 300);
   const searchInputRef = useRef(null);
+  const { isOnline } = useNetworkStatus();
 
   // Dynamic recentSuggestions from localStorage
   const [recentSuggestions, setRecentSuggestions] = useState(() => {
@@ -64,11 +68,22 @@ function Search() {
     data: searchData = { results: [], page: 1, totalPages: 1, totalResults: 0 },
     isLoading,
     error,
+    isError,
   } = useQuery({
     queryKey: ["search", debouncedSearch, searchPage],
     queryFn: fetchSearchResults,
     enabled: !!debouncedSearch.trim(),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on 404 errors or validation errors
+      if (error?.status === 404 || error?.type === "VALIDATION_ERROR")
+        return false;
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    onError: (error) => {
+      showErrorNotification(error, "Failed to search. Please try again.");
+    },
   });
 
   const searchResults = searchData.results || [];
@@ -191,8 +206,11 @@ function Search() {
           {/* Search Results Section */}
           {showResults && searchQuery && (
             <>
+              {/* Offline State */}
+              {!isOnline && <SearchOfflineMessage />}
+
               {/* Loading State */}
-              {isLoading && (
+              {isLoading && isOnline && (
                 <div className="flex flex-col items-center justify-center py-16">
                   <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
                   <p className="mt-4 text-gray-600 dark:text-gray-400">
@@ -217,7 +235,7 @@ function Search() {
               )}
 
               {/* Search Results */}
-              {!isLoading && !error && (
+              {!isLoading && !error && isOnline && (
                 <div className="space-y-6">
                   {filteredResults.length === 0 ? (
                     <div className="text-center py-16">
