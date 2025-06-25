@@ -9,12 +9,15 @@ import {
   CalendarIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import { useNetworkStatus } from "../hooks/useNetworkStatus";
+import { DetailsOfflineMessage } from "../components/OfflineMessage";
 
 function MovieDetails() {
   const { id } = useParams();
   const { addToWatchlist, removeFromWatchlist, watchlist } = useWatchlist();
   const isInWatchlist = watchlist.some((item) => item.id === Number(id));
   const [showPlayer, setShowPlayer] = useState(false);
+  const { isOnline } = useNetworkStatus();
 
   const fetchMovieDetails = async () => {
     const [movie, credits, videos, similar, reviews] = await Promise.all([
@@ -44,14 +47,94 @@ function MovieDetails() {
     };
   };
 
-  const { data: movie, isLoading } = useQuery({
+  const {
+    data: movie,
+    isLoading,
+    error,
+    refetch,
+    isError,
+  } = useQuery({
     queryKey: ["movie", id],
     queryFn: fetchMovieDetails,
+    retry: (failureCount, error) => {
+      // Don't retry on 404 errors
+      if (error?.status === 404) return false;
+      // Retry up to 2 times for other errors
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
+
+  // Show offline message if not connected
+  if (!isOnline) {
+    return <DetailsOfflineMessage type="movie" />;
+  }
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">Loading...</div>
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading movie details...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Failed to Load Movie
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            {error?.status === 404
+              ? "This movie could not be found. It may have been removed or the ID is incorrect."
+              : error?.message ||
+                "We couldn't load the movie details. Please try again."}
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => refetch()}
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!movie) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-gray-400 text-6xl mb-4">🎬</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Movie Not Found
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            The requested movie could not be found.
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
     );
   }
 
