@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "../hooks/useDebounce";
-import { api } from "../utils/api";
+import { api, API_ERROR_TYPES } from "../utils/api";
 import { showErrorNotification } from "../utils/errorNotifications";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { SearchOfflineMessage } from "../components/OfflineMessage";
@@ -15,6 +15,42 @@ import {
   UserIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
+
+// Service Error Component for API key issues
+function ServiceErrorMessage({ error, onRetry }) {
+  const isApiKeyError = error?.type === API_ERROR_TYPES.API_KEY_MISSING;
+  
+  return (
+    <div className="text-center py-16">
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-8 max-w-lg mx-auto">
+        <div className="text-red-500 text-5xl mb-4">
+          {isApiKeyError ? "🔑" : "⚠️"}
+        </div>
+        <h3 className="text-xl font-semibold text-red-800 dark:text-red-200 mb-3">
+          {isApiKeyError ? "" : "Service Unavailable"}
+        </h3>
+        <p className="text-red-600 dark:text-red-300 mb-6">
+          {isApiKeyError 
+            ? "Our movie database service is temporarily unavailable due to configuration issues. We're working to resolve this as quickly as possible."
+            : "Unable to load content at the moment. Please try again."}
+        </p>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+          >
+            Try Again
+          </button>
+        )}
+        {isApiKeyError && (
+          <div className="mt-4 text-sm text-red-500 dark:text-red-400">
+            <p>Expected resolution time: A few minutes</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function Search() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,13 +68,13 @@ function Search() {
   });
 
   // Fetch trending movies and TV shows
-  const { data: trendingMovies } = useQuery({
+  const { data: trendingMovies, error: moviesError } = useQuery({
     queryKey: ["trendingMovies"],
     queryFn: () => api.getTrendingResults("movie", "week"),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: trendingTV } = useQuery({
+  const { data: trendingTV, error: tvError } = useQuery({
     queryKey: ["trendingTV"],
     queryFn: () => api.getTrendingResults("tv", "week"),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -127,6 +163,12 @@ function Search() {
     searchInputRef.current?.focus();
   }, []);
 
+  // Check for API key errors in trending data
+  const hasApiKeyError = 
+    moviesError?.type === API_ERROR_TYPES.API_KEY_MISSING || 
+    tvError?.type === API_ERROR_TYPES.API_KEY_MISSING ||
+    error?.type === API_ERROR_TYPES.API_KEY_MISSING;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Search Header - positioned below fixed navbar */}
@@ -155,7 +197,7 @@ function Search() {
           </div>
 
           {/* Filter Tabs */}
-          {showResults && searchQuery && (
+          {showResults && searchQuery && !hasApiKeyError && (
             <div className="flex flex-wrap gap-1 mt-4 bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
               {[
                 { key: "all", label: "All", icon: MagnifyingGlassIcon },
@@ -203,8 +245,16 @@ function Search() {
       {/* Main Content - with proper spacing for navbar */}
       <div className="pt-6 pb-16">
         <div className="max-w-7xl mx-auto px-4">
+          {/* Show API key error message if present */}
+          {hasApiKeyError && (
+            <ServiceErrorMessage 
+              error={moviesError || tvError || error} 
+              onRetry={() => window.location.reload()} 
+            />
+          )}
+
           {/* Search Results Section */}
-          {showResults && searchQuery && (
+          {showResults && searchQuery && !hasApiKeyError && (
             <>
               {/* Offline State */}
               {!isOnline && <SearchOfflineMessage />}
@@ -219,8 +269,8 @@ function Search() {
                 </div>
               )}
 
-              {/* Error State */}
-              {error && (
+              {/* Error State (non-API key errors) */}
+              {error && !hasApiKeyError && (
                 <div className="text-center py-16">
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 max-w-md mx-auto">
                     <div className="text-red-500 text-4xl mb-4">⚠️</div>
@@ -301,8 +351,8 @@ function Search() {
             </>
           )}
 
-          {/* Default Content (when no search is active) */}
-          {!showResults && !searchQuery && (
+          {/* Default Content (when no search is active and no API key error) */}
+          {!showResults && !searchQuery && !hasApiKeyError && (
             <div className="space-y-12">
               {/* Welcome Section */}
               <div className="text-center py-12 space-y-8">
