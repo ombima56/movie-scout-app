@@ -171,7 +171,7 @@ function TVDetails() {
       {/* Hero Section with Player */}
       <div className="relative">
         {showPlayer ? (
-          <div className="aspect-video bg-black rounded-lg overflow-hidden">
+          <div className="aspect-video bg-black mt-20 rounded-lg overflow-hidden">
             <iframe
               src={`https://vidsrc.me/embed/tv?tmdb=${tvShow.id}`}
               className="w-full h-full"
@@ -181,7 +181,7 @@ function TVDetails() {
           </div>
         ) : (
           <div
-            className="relative aspect-video bg-gradient-to-r from-black/70 to-transparent rounded-lg overflow-hidden cursor-pointer group"
+            className="relative aspect-video bg-gradient-to-r mt-20 from-black/70 to-transparent rounded-lg overflow-hidden cursor-pointer group"
             style={{
               backgroundImage: tvShow.backdrop_path
                 ? `url(https://image.tmdb.org/t/p/w1280${tvShow.backdrop_path})`
