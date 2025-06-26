@@ -59,6 +59,14 @@ const ERROR_CONFIGS = {
       color: '#ffffff',
     },
   },
+  [API_ERROR_TYPES.API_KEY_MISSING]: {
+    icon: '🔑',
+    duration: 8000,
+    style: {
+      background: '#dc2626',
+      color: '#ffffff',
+    },
+  },
   [API_ERROR_TYPES.UNKNOWN_ERROR]: {
     icon: '❌',
     duration: 5000,
@@ -202,15 +210,17 @@ const getDefaultErrorMessage = (errorType) => {
     case API_ERROR_TYPES.TIMEOUT_ERROR:
       return 'Request timed out. Please try again.';
     case API_ERROR_TYPES.AUTHENTICATION_ERROR:
-      return 'Authentication failed. Please check your API key.';
+      return 'Service authentication failed. Please try again later.';
     case API_ERROR_TYPES.RATE_LIMIT_ERROR:
       return 'Too many requests. Please wait a moment and try again.';
     case API_ERROR_TYPES.NOT_FOUND_ERROR:
       return 'The requested resource was not found.';
     case API_ERROR_TYPES.SERVER_ERROR:
-      return 'Server error occurred. Please try again later.';
+      return 'Service temporarily unavailable. Please try again later.';
     case API_ERROR_TYPES.VALIDATION_ERROR:
       return 'Invalid request. Please check your input.';
+    case API_ERROR_TYPES.API_KEY_MISSING:
+      return 'Service temporarily unavailable due to configuration issues. Please try again later.';
     default:
       return 'An unexpected error occurred.';
   }

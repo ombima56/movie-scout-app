@@ -36,7 +36,7 @@ function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/search" className="text-gray-600 dark:text-gray-400 hover:text-primary-500">
+                <Link to="/" className="text-gray-600 dark:text-gray-400 hover:text-primary-500">
                   Search
                 </Link>
               </li>

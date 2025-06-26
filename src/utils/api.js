@@ -17,6 +17,7 @@ export const API_ERROR_TYPES = {
   SERVER_ERROR: "SERVER_ERROR",
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
   VALIDATION_ERROR: "VALIDATION_ERROR",
+  API_KEY_MISSING: "API_KEY_MISSING", // New error type for missing API key
 };
 
 // Custom API Error class
@@ -75,8 +76,8 @@ const fetchWithTimeout = async (url, timeout = 10000, retries = 2) => {
         (url.includes("undefined") || url.includes("null"))
       ) {
         throw new APIError(
-          "API key is missing. Please check your environment variables.",
-          API_ERROR_TYPES.AUTHENTICATION_ERROR,
+          "Service temporarily unavailable. Please try again later.",
+          API_ERROR_TYPES.API_KEY_MISSING,
           401
         );
       }
@@ -101,30 +102,30 @@ const fetchWithTimeout = async (url, timeout = 10000, retries = 2) => {
         switch (response.status) {
           case 401:
             errorType = API_ERROR_TYPES.AUTHENTICATION_ERROR;
-            errorMessage = "Invalid API key or authentication failed";
+            errorMessage = "Service authentication failed. Please try again later.";
             break;
           case 404:
             errorType = API_ERROR_TYPES.NOT_FOUND_ERROR;
-            errorMessage = "The requested resource was not found";
+            errorMessage = "The requested content was not found";
             break;
           case 429:
             errorType = API_ERROR_TYPES.RATE_LIMIT_ERROR;
-            errorMessage = "Rate limit exceeded. Please try again later";
+            errorMessage = "Too many requests. Please wait a moment and try again";
             break;
           case 500:
           case 502:
           case 503:
           case 504:
             errorType = API_ERROR_TYPES.SERVER_ERROR;
-            errorMessage = "Server error. Please try again later";
+            errorMessage = "Service temporarily unavailable. Please try again later";
             break;
           default:
             if (response.status >= 400 && response.status < 500) {
               errorType = API_ERROR_TYPES.VALIDATION_ERROR;
-              errorMessage = "Invalid request parameters";
+              errorMessage = "Invalid request. Please try again";
             } else if (response.status >= 500) {
               errorType = API_ERROR_TYPES.SERVER_ERROR;
-              errorMessage = "Server error occurred";
+              errorMessage = "Service error occurred. Please try again later";
             }
         }
 
@@ -164,7 +165,7 @@ const fetchWithTimeout = async (url, timeout = 10000, retries = 2) => {
       // Handle JSON parsing errors
       if (error.message.includes("JSON")) {
         throw new APIError(
-          "Invalid response format from server",
+          "Invalid response from server. Please try again.",
           API_ERROR_TYPES.SERVER_ERROR,
           null,
           error
@@ -441,7 +442,7 @@ export const api = {
       return response.results;
     } catch (error) {
       console.error("Search results error:", error);
-      return [];
+      throw error;
     }
   },
 
@@ -455,7 +456,7 @@ export const api = {
       return response.results;
     } catch (error) {
       console.error("Trending results error:", error);
-      return [];
+      throw error;
     }
   },
 };
