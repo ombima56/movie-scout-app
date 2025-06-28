@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "../hooks/useDebounce";
 import { api, API_ERROR_TYPES } from "../utils/api";
 import { showErrorNotification } from "../utils/errorNotifications";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
+import { useNavigation } from "../contexts/NavigationContext";
 
 // Import new components
 import { ServiceErrorMessage } from "../components/ServiceErrorMessage";
@@ -12,13 +14,26 @@ import { SearchResultsDisplay } from "../components/SearchResultsDisplay";
 import { WelcomeContent } from "../components/WelcomeContent";
 
 function Home() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showResults, setShowResults] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState("all");
-  const [searchPage, setSearchPage] = useState(1);
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { saveSearchState } = useNavigation();
   const searchInputRef = useRef(null);
   const { isOnline } = useNetworkStatus();
+
+  // Initialize state from URL parameters
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("q") || ""
+  );
+  const [selectedFilter, setSelectedFilter] = useState(
+    () => searchParams.get("filter") || "all"
+  );
+  const [searchPage, setSearchPage] = useState(
+    () => parseInt(searchParams.get("page")) || 1
+  );
+  const [showResults, setShowResults] = useState(() =>
+    Boolean(searchParams.get("q"))
+  );
+
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Dynamic recentSuggestions from localStorage
   const [recentSuggestions, setRecentSuggestions] = useState(() => {
@@ -98,15 +113,30 @@ function Home() {
     return true;
   });
 
+  // Update URL parameters when search state changes
+  const updateSearchParams = (query, filter, page) => {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (filter && filter !== "all") params.set("filter", filter);
+    if (page && page > 1) params.set("page", page.toString());
+
+    setSearchParams(params);
+
+    // Save to navigation context
+    saveSearchState(query, filter, page, Boolean(query));
+  };
+
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
-    setShowResults(true);
-    setSearchPage(1); // Reset to first page when search changes
+    setShowResults(Boolean(value));
+    setSearchPage(1);
+    updateSearchParams(value, selectedFilter, 1);
   };
 
   const handlePageChange = (page) => {
     setSearchPage(page);
+    updateSearchParams(searchQuery, selectedFilter, page);
     // Scroll to top of results when page changes
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -114,14 +144,18 @@ function Home() {
   const clearSearch = () => {
     setSearchQuery("");
     setShowResults(false);
-    setSearchPage(1); // Reset page when clearing search
+    setSearchPage(1);
+    setSearchParams(new URLSearchParams()); // Clear URL params
+    saveSearchState("", "all", 1, false); // Clear navigation state
     searchInputRef.current?.focus();
   };
 
   const handleSuggestionClick = (suggestion) => {
     setSearchQuery(suggestion);
     setShowResults(true);
-    setSearchPage(1); // Reset page when using a suggestion
+    setSearchPage(1);
+    updateSearchParams(suggestion, selectedFilter, 1);
+
     // Add to recent suggestions
     setRecentSuggestions((prev) => {
       const newRecent = [
@@ -132,6 +166,36 @@ function Home() {
       return newRecent;
     });
   };
+
+  // Handle filter changes
+  const handleFilterChange = (filter) => {
+    setSelectedFilter(filter);
+    setSearchPage(1); // Reset to first page when filter changes
+    updateSearchParams(searchQuery, filter, 1);
+  };
+
+  // Sync URL params with state on mount and URL changes
+  useEffect(() => {
+    const query = searchParams.get("q") || "";
+    const filter = searchParams.get("filter") || "all";
+    const page = parseInt(searchParams.get("page")) || 1;
+
+    // Only update state if values actually changed to prevent loops
+    if (query !== searchQuery) setSearchQuery(query);
+    if (filter !== selectedFilter) setSelectedFilter(filter);
+    if (page !== searchPage) setSearchPage(page);
+    if (Boolean(query) !== showResults) setShowResults(Boolean(query));
+
+    // Always save to navigation context when URL changes
+    saveSearchState(query, filter, page, Boolean(query));
+  }, [
+    searchParams,
+    searchQuery,
+    selectedFilter,
+    searchPage,
+    showResults,
+    saveSearchState,
+  ]);
 
   // Focus search input on component mount
   useEffect(() => {
@@ -146,7 +210,6 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-
       <SearchBar
         searchQuery={searchQuery}
         handleSearch={handleSearch}
@@ -154,7 +217,7 @@ function Home() {
         searchInputRef={searchInputRef}
         showFilters={showResults}
         selectedFilter={selectedFilter}
-        setSelectedFilter={setSelectedFilter}
+        setSelectedFilter={handleFilterChange}
         searchResultsLength={searchResults}
         hasApiKeyError={hasApiKeyError}
       />
