@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { DetailsOfflineMessage } from "../components/OfflineMessage";
+import SmartBackButton from "../components/SmartBackButton";
 
 function MovieDetails() {
   const { id } = useParams();
@@ -158,6 +159,9 @@ function MovieDetails() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pt-20">
+      {/* Smart Back Button */}
+      <SmartBackButton className="mb-4" />
+
       {/* Hero Section with Player */}
       <div className="relative">
         {showPlayer ? (
