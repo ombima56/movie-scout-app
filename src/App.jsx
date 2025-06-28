@@ -11,6 +11,7 @@ import {
   useNetworkStatusContext,
 } from "./hooks/useNetworkStatus";
 import Footer from "./components/Footer";
+import RouteGuard from "./components/RouteGuard";
 
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
@@ -62,8 +63,22 @@ function AppContent() {
           <main className="flex-grow container mx-auto px-4 py-8">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/movie/:id" element={<MovieDetails />} />
-              <Route path="/tv/:id" element={<TVDetails />} />
+              <Route
+                path="/movie/:id"
+                element={
+                  <RouteGuard paramName="id">
+                    <MovieDetails />
+                  </RouteGuard>
+                }
+              />
+              <Route
+                path="/tv/:id"
+                element={
+                  <RouteGuard paramName="id">
+                    <TVDetails />
+                  </RouteGuard>
+                }
+              />
               <Route path="/watchlist" element={<Watchlist />} />
               <Route path="/trending" element={<Trending />} />
               {/* Catch-all route for 404 pages */}
