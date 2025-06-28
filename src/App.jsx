@@ -17,6 +17,7 @@ import MovieDetails from "./pages/MovieDetails";
 import TVDetails from "./pages/TVDetails";
 import Watchlist from "./pages/Watchlist";
 import Trending from "./pages/Trending";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +64,8 @@ function AppContent() {
             <Route path="/tv/:id" element={<TVDetails />} />
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/trending" element={<Trending />} />
+            {/* Catch-all route for 404 pages */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
         <Footer />
