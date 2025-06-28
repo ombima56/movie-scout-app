@@ -1,0 +1,51 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/movie/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/tv/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/watchlist",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/trending",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.themoviedb.org https://www.omdbapi.com https://vidsrc.me; frame-src https://vidsrc.me; object-src 'none'; base-uri 'self';"
+        }
+      ]
+    }
+  ]
+}
