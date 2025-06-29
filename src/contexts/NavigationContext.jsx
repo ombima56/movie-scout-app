@@ -49,6 +49,15 @@ export function NavigationProvider({ children }) {
 
   // Save search state when on home page with search
   const saveSearchState = (query, filter = "all", page = 1, hasResults = false) => {
+    // Only update if values have actually changed
+    const currentState = searchState;
+    if (query === currentState.query && 
+        filter === currentState.filter && 
+        page === currentState.page && 
+        hasResults === currentState.hasResults) {
+      return;
+    }
+
     setSearchState({
       query: query || "",
       filter: filter || "all", 
