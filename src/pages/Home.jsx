@@ -6,6 +6,7 @@ import { api, API_ERROR_TYPES } from "../utils/api";
 import { showErrorNotification } from "../utils/errorNotifications";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { useNavigation } from "../contexts/NavigationContext";
+import { syncUrlWithState, getStateFromUrl } from "../utils/urlUtils";
 
 // Import new components
 import { ServiceErrorMessage } from "../components/ServiceErrorMessage";
@@ -13,25 +14,18 @@ import { SearchBar } from "../components/SearchBar";
 import { SearchResultsDisplay } from "../components/SearchResultsDisplay";
 import { WelcomeContent } from "../components/WelcomeContent";
 
-function Home() {
+export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { saveSearchState } = useNavigation();
   const searchInputRef = useRef(null);
   const { isOnline } = useNetworkStatus();
 
   // Initialize state from URL parameters
-  const [searchQuery, setSearchQuery] = useState(
-    () => searchParams.get("q") || ""
-  );
-  const [selectedFilter, setSelectedFilter] = useState(
-    () => searchParams.get("filter") || "all"
-  );
-  const [searchPage, setSearchPage] = useState(
-    () => parseInt(searchParams.get("page")) || 1
-  );
-  const [showResults, setShowResults] = useState(() =>
-    Boolean(searchParams.get("q"))
-  );
+  const { query: initialQuery, filter: initialFilter, page: initialPage, showResults: initialShowResults } = getStateFromUrl(searchParams);
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [selectedFilter, setSelectedFilter] = useState(initialFilter);
+  const [searchPage, setSearchPage] = useState(initialPage);
+  const [showResults, setShowResults] = useState(initialShowResults);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -115,6 +109,15 @@ function Home() {
 
   // Update URL parameters when search state changes
   const updateSearchParams = (query, filter, page) => {
+    // Only update if values actually changed
+    const currentQuery = searchParams.get("q") || "";
+    const currentFilter = searchParams.get("filter") || "all";
+    const currentPage = parseInt(searchParams.get("page")) || 1;
+
+    if (query === currentQuery && filter === currentFilter && page === currentPage) {
+      return;
+    }
+
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (filter && filter !== "all") params.set("filter", filter);
@@ -122,8 +125,10 @@ function Home() {
 
     setSearchParams(params);
 
-    // Save to navigation context
-    saveSearchState(query, filter, page, Boolean(query));
+    // Only save search state if we have a query
+    if (query) {
+      saveSearchState(query, filter, page, Boolean(query));
+    }
   };
 
   const handleSearch = (e) => {
@@ -174,28 +179,27 @@ function Home() {
     updateSearchParams(searchQuery, filter, 1);
   };
 
-  // Sync URL params with state on mount and URL changes
+  // Sync URL params with state when state changes
   useEffect(() => {
-    const query = searchParams.get("q") || "";
-    const filter = searchParams.get("filter") || "all";
-    const page = parseInt(searchParams.get("page")) || 1;
+    // Only sync URL when state changes and prevent circular updates
+    syncUrlWithState(searchParams, setSearchParams, searchQuery, selectedFilter, searchPage);
+    // Only save search state if we actually have search results
+    if (searchQuery) {
+      saveSearchState(searchQuery, selectedFilter, searchPage, showResults);
+    }
+  }, [searchQuery, selectedFilter, searchPage, showResults, saveSearchState]);
 
-    // Only update state if values actually changed to prevent loops
-    if (query !== searchQuery) setSearchQuery(query);
-    if (filter !== selectedFilter) setSelectedFilter(filter);
-    if (page !== searchPage) setSearchPage(page);
-    if (Boolean(query) !== showResults) setShowResults(Boolean(query));
-
-    // Always save to navigation context when URL changes
-    saveSearchState(query, filter, page, Boolean(query));
-  }, [
-    searchParams,
-    searchQuery,
-    selectedFilter,
-    searchPage,
-    showResults,
-    saveSearchState,
-  ]);
+  // Sync state with URL only on mount
+  useEffect(() => {
+    const { query, filter, page, showResults } = getStateFromUrl(searchParams);
+    // Only update state if values have actually changed
+    if (query !== searchQuery || filter !== selectedFilter || page !== searchPage || showResults !== searchResults) {
+      setSearchQuery(query);
+      setSelectedFilter(filter);
+      setSearchPage(page);
+      setShowResults(showResults);
+    }
+  }, []); // Only run on mount
 
   // Focus search input on component mount
   useEffect(() => {
@@ -254,5 +258,3 @@ function Home() {
     </div>
   );
 }
-
-export default Home;
