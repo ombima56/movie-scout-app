@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "../components/ThemeProvider";
 import { useClientPagination } from "../hooks/usePagination";
 import MovieCard from "../components/MovieCard";
