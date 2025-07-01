@@ -46,7 +46,7 @@ export function useNetworkStatus() {
         timeout: 5000,
       });
       return response.ok;
-    } catch (error) {
+    } catch {
       return false;
     }
   };
@@ -115,7 +115,7 @@ export function OfflinePage() {
       } else {
         toast.error("Still offline. Please check your internet connection.");
       }
-    } catch (error) {
+    } catch {
       toast.error("Unable to check connection. Please try again.");
     } finally {
       setIsChecking(false);
