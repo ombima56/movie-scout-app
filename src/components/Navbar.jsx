@@ -50,20 +50,23 @@ function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map(({ to, label, icon: Icon }) => (
-              <Link
-                key={to}
-                to={to}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  location.pathname === to
-                    ? "bg-primary-500 text-gray-700  dark:text-white shadow-lg shadow-primary-500/25"
-                    : "text-gray-700 hover:text-primary-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-primary-400 dark:hover:bg-gray-800"
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-                <span>{label}</span>
-              </Link>
-            ))}
+            {navLinks.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    location.pathname === item.to
+                      ? "bg-primary-500 text-gray-700  dark:text-white shadow-lg shadow-primary-500/25"
+                      : "text-gray-700 hover:text-primary-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-primary-400 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </div>
 
           {/* Right side buttons */}
@@ -105,19 +108,19 @@ function Navbar() {
           }`}
         >
           <div className="pt-4 space-y-2">
-            {navLinks.map(({ to, label, icon: Icon }) => (
+            {navLinks.map((item) => (
               <Link
-                key={to}
-                to={to}
+                key={item.to}
+                to={item.to}
                 onClick={closeMobileMenu}
                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
-                  location.pathname === to
+                  location.pathname === item.to
                     ? "bg-primary-500 text-white shadow-lg"
                     : "text-gray-700 hover:text-primary-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-primary-400 dark:hover:bg-gray-800"
                 }`}
               >
-                <Icon className="h-6 w-6" />
-                <span>{label}</span>
+                <item.icon className="h-6 w-6" />
+                <span>{item.label}</span>
               </Link>
             ))}
 

@@ -50,34 +50,37 @@ export function SearchBar({
               { key: "movie", label: "Movies", icon: FilmIcon },
               { key: "tv", label: "TV Shows", icon: TvIcon },
               { key: "person", label: "People", icon: UserIcon },
-            ].map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setSelectedFilter(key)}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  selectedFilter === key
-                    ? "bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{label}</span>
-                {key !== "all" && searchResultsLength > 0 && (
-                  <span className="bg-gray-200 dark:bg-gray-500 text-xs px-2 py-1 rounded-full">
-                    {
-                      searchResultsLength.filter((item) => {
-                        if (key === "movie")
-                          return item.media_type === "movie" || !item.media_type;
-                        if (key === "tv") return item.media_type === "tv";
-                        if (key === "person")
-                          return item.media_type === "person";
-                        return true;
-                      }).length
-                    }
-                  </span>
-                )}
-              </button>
-            ))}
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setSelectedFilter(item.key)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    selectedFilter === item.key
+                      ? "bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                  {item.key !== "all" && searchResultsLength > 0 && (
+                    <span className="bg-gray-200 dark:bg-gray-500 text-xs px-2 py-1 rounded-full">
+                      {
+                        searchResultsLength.filter((resultItem) => {
+                          if (item.key === "movie")
+                            return resultItem.media_type === "movie" || !resultItem.media_type;
+                          if (item.key === "tv") return resultItem.media_type === "tv";
+                          if (item.key === "person")
+                            return resultItem.media_type === "person";
+                          return true;
+                        }).length
+                      }
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

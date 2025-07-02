@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useWatchlist } from "../contexts/WatchlistContext";
+import { api } from "../utils/api";
 import {
   StarIcon,
   TvIcon,
@@ -10,6 +11,8 @@ import {
   CalendarIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/react";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { DetailsOfflineMessage } from "../components/OfflineMessage";
 import SmartBackButton from "../components/SmartBackButton";
@@ -19,13 +22,12 @@ function TVDetails() {
   const { addToWatchlist, removeFromWatchlist, watchlist } = useWatchlist();
   const isInWatchlist = watchlist.some((item) => item.id === Number(id));
   const [showPlayer, setShowPlayer] = useState(false);
+  const [currentEpisode, setCurrentEpisode] = useState({ season_number: 1, episode_number: 1 });
   const { isOnline } = useNetworkStatus();
 
   const fetchTVDetails = async () => {
     const [tv, credits, videos, similar, reviews] = await Promise.all([
-      axios.get(
-        `https://api.themoviedb.org/3/tv/${id}?api_key=${import.meta.env.VITE_TMDB_API_KEY}&language=en-US`
-      ),
+      api.getTvDetails(id), // Use the enhanced API function
       axios.get(
         `https://api.themoviedb.org/3/tv/${id}/credits?api_key=${import.meta.env.VITE_TMDB_API_KEY}`
       ),
@@ -41,7 +43,7 @@ function TVDetails() {
     ]);
 
     return {
-      ...tv.data,
+      ...tv,
       credits: credits.data,
       videos: videos.data,
       similar: similar.data,
@@ -82,8 +84,81 @@ function TVDetails() {
     }
   };
 
-  const handleWatchNow = () => {
+  const handleWatchNow = (seasonNumber, episodeNumber) => {
+    setCurrentEpisode({ season_number: seasonNumber, episode_number: episodeNumber });
     setShowPlayer(true);
+  };
+
+  const handleNextEpisode = () => {
+    if (!tvShow || !currentEpisode) return;
+
+    const currentSeasonIndex = tvShow.seasons.findIndex(
+      (s) => s.season_number === currentEpisode.season_number
+    );
+    const currentEpisodeIndex = tvShow.seasons[currentSeasonIndex]?.episodes.findIndex(
+      (e) => e.episode_number === currentEpisode.episode_number
+    );
+
+    if (currentSeasonIndex === -1 || currentEpisodeIndex === -1) return;
+
+    const currentSeason = tvShow.seasons[currentSeasonIndex];
+
+    // Try to go to the next episode in the current season
+    if (currentEpisodeIndex < currentSeason.episodes.length - 1) {
+      setCurrentEpisode({
+        season_number: currentSeason.season_number,
+        episode_number: currentEpisode.episode_number + 1,
+      });
+    } else {
+      // Try to go to the next season
+      const nextSeason = tvShow.seasons[currentSeasonIndex + 1];
+      if (nextSeason && nextSeason.episodes.length > 0) {
+        setCurrentEpisode({
+          season_number: nextSeason.season_number,
+          episode_number: nextSeason.episodes[0].episode_number,
+        });
+      } else {
+        // No more episodes or seasons
+        setShowPlayer(false);
+        setCurrentEpisode(null);
+      }
+    }
+  };
+
+  const handlePreviousEpisode = () => {
+    if (!tvShow || !currentEpisode) return;
+
+    const currentSeasonIndex = tvShow.seasons.findIndex(
+      (s) => s.season_number === currentEpisode.season_number
+    );
+    const currentEpisodeIndex = tvShow.seasons[currentSeasonIndex]?.episodes.findIndex(
+      (e) => e.episode_number === currentEpisode.episode_number
+    );
+
+    if (currentSeasonIndex === -1 || currentEpisodeIndex === -1) return;
+
+    const currentSeason = tvShow.seasons[currentSeasonIndex];
+
+    // Try to go to the previous episode in the current season
+    if (currentEpisodeIndex > 0) {
+      setCurrentEpisode({
+        season_number: currentSeason.season_number,
+        episode_number: currentEpisode.episode_number - 1,
+      });
+    } else {
+      // Try to go to the previous season
+      const prevSeason = tvShow.seasons[currentSeasonIndex - 1];
+      if (prevSeason && prevSeason.episodes.length > 0) {
+        setCurrentEpisode({
+          season_number: prevSeason.season_number,
+          episode_number: prevSeason.episodes[prevSeason.episodes.length - 1].episode_number,
+        });
+      } else {
+        // No more episodes or seasons
+        setShowPlayer(false);
+        setCurrentEpisode(null);
+      }
+    }
   };
 
   const formatRuntime = (minutes) => {
@@ -177,10 +252,10 @@ function TVDetails() {
         {showPlayer ? (
           <div className="aspect-video bg-black rounded-lg overflow-hidden">
             <iframe
-              src={`https://vidsrc.me/embed/tv?tmdb=${tvShow.id}`}
+              src={`https://vidsrc.me/embed/tv?tmdb=${tvShow.id}&season=${currentEpisode.season_number}&episode=${currentEpisode.episode_number}`}
               className="w-full h-full"
               allowFullScreen
-              title={`Watch ${tvShow.name}`}
+              title={`Watch ${tvShow.name} S${currentEpisode.season_number}E${currentEpisode.episode_number}`}
             />
           </div>
         ) : (
@@ -193,7 +268,7 @@ function TVDetails() {
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
-            onClick={handleWatchNow}
+            onClick={() => handleWatchNow(tvShow.seasons[0]?.season_number || 1, tvShow.seasons[0]?.episodes[0]?.episode_number || 1)}
           >
             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
             <div className="absolute inset-0 flex items-center justify-center">
@@ -205,9 +280,87 @@ function TVDetails() {
             </div>
           </div>
         )}
+
+        {showPlayer && currentEpisode && (
+          <div className="flex justify-center items-center space-x-4 mt-4">
+            <button
+              onClick={handlePreviousEpisode}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Previous Episode
+            </button>
+            <button
+              onClick={handleNextEpisode}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Next Episode
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* TV Show Info Section */}
+      {/* Seasons Section */}
+      {tvShow.seasons && tvShow.seasons.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+            Seasons
+          </h2>
+          <div className="space-y-4">
+            {tvShow.seasons
+              .filter((season) => season.season_number > 0)
+              .sort((a, b) => a.season_number - b.season_number) // Sort seasons by number
+                .map((season) => (
+                <Disclosure as="div" key={season.id} className="border border-gray-200 dark:border-gray-700 rounded-lg">
+                  {({ open }) => (
+                  <>
+                    <DisclosureButton className="flex w-full justify-between rounded-lg bg-gray-100 dark:bg-gray-700 px-4 py-3 text-left text-lg font-medium text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring focus-visible:ring-blue-500 focus-visible:ring-opacity-75">
+                    <span>
+                      Season {season.season_number}{" "}
+                      {season.name && season.name !== `Season ${season.season_number}` && `(${season.name})`}
+                    </span>
+                    <ChevronDownIcon
+                      className={`${
+                      open ? "rotate-180 transform" : ""
+                      } h-5 w-5 text-gray-500 dark:text-gray-400`}
+                    />
+                    </DisclosureButton>
+                    <DisclosurePanel className="px-4 pt-4 pb-2 text-sm text-gray-500 dark:text-gray-300">
+                    {season.overview && (
+                      <p className="mb-4">{season.overview}</p>
+                    )}
+                    {season.episodes && season.episodes.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {season.episodes.map((episode) => (
+                        <button
+                          onClick={() => handleWatchNow(season.season_number, episode.episode_number)}
+                          className={`mt-auto flex text-gray-500 dark:text-gray-300 items-center justify-center px-3 py-3 rounded-lg text-sm font-medium ${
+                          currentEpisode.season_number === season.season_number && 
+                          currentEpisode.episode_number === episode.episode_number
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
+                          } transition-colors text-center`}
+                        >
+                        <PlayIcon className="h-4 w-4 mr-1" />
+                        <span className="block truncate">
+                          E{episode.episode_number}. {episode.name}{" "}
+                          {episode.air_date && `(${new Date(episode.air_date).getFullYear()})`}
+                        </span>
+                        </button>
+                      ))}
+                      </div>
+                    ) : (
+                      <p>No episodes available for this season.</p>
+                    )}
+                    </DisclosurePanel>
+                  </>
+                  )}
+                </Disclosure>
+                ))}
+              </div>
+            </div>
+            )}
+
+            {/* TV Show Info Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-1/4">

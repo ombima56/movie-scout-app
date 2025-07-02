@@ -187,19 +187,7 @@ export default function Home() {
     if (searchQuery) {
       saveSearchState(searchQuery, selectedFilter, searchPage, showResults);
     }
-  }, [searchQuery, selectedFilter, searchPage, showResults, saveSearchState]);
-
-  // Sync state with URL only on mount
-  useEffect(() => {
-    const { query, filter, page, showResults } = getStateFromUrl(searchParams);
-    // Only update state if values have actually changed
-    if (query !== searchQuery || filter !== selectedFilter || page !== searchPage || showResults !== searchResults) {
-      setSearchQuery(query);
-      setSelectedFilter(filter);
-      setSearchPage(page);
-      setShowResults(showResults);
-    }
-  }, []); // Only run on mount
+  }, [searchQuery, selectedFilter, searchPage, showResults, saveSearchState, searchParams, setSearchParams]);
 
   // Focus search input on component mount
   useEffect(() => {

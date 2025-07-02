@@ -45,6 +45,8 @@ const tmdbEndpoints = {
     `${TMDB_BASE_URL}/trending/${mediaType}/${timeWindow}?api_key=${TMDB_API_KEY}&page=${page}`,
   movieDetails: (id) => `${TMDB_BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}`,
   tvDetails: (id) => `${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}`,
+  tvSeasonDetails: (tvId, seasonNumber) =>
+    `${TMDB_BASE_URL}/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}`,
   movieVideos: (id) =>
     `${TMDB_BASE_URL}/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`,
   tvVideos: (id) =>
@@ -325,7 +327,18 @@ export const api = {
         );
       }
 
-      return await fetchWithTimeout(tmdbEndpoints.tvDetails(id));
+      const tvShow = await fetchWithTimeout(tmdbEndpoints.tvDetails(id));
+
+      // Fetch details for each season
+      const seasonDetailsPromises = [];
+      for (let i = 1; i <= tvShow.number_of_seasons; i++) {
+        seasonDetailsPromises.push(
+          fetchWithTimeout(tmdbEndpoints.tvSeasonDetails(id, i))
+        );
+      }
+      const seasons = await Promise.all(seasonDetailsPromises);
+
+      return { ...tvShow, seasons };
     } catch (error) {
       if (error instanceof APIError) throw error;
       throw new APIError(
